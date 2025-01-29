@@ -6,9 +6,11 @@ from typing import List, Dict, Optional
 
 app = FastAPI(title="Onboarders Example Time Series Prediction Service")
 
+
 class TimeSeriesData(BaseModel):
     dates: List[str]
     values: List[float]
+
 
 class ProphetParameters(BaseModel):
     # Core Parameters
@@ -32,7 +34,7 @@ class ProphetParameters(BaseModel):
         pattern="^(additive|multiplicative)$",
         description="Type of seasonality, either 'additive' or 'multiplicative'"
     )
-    
+
     # Seasonality Parameters
     yearly_seasonality: Optional[bool] = Field(
         default=True,
@@ -46,7 +48,7 @@ class ProphetParameters(BaseModel):
         default=False,
         description="Whether to include daily seasonality"
     )
-    
+
     # Growth Parameters
     growth: str = Field(
         default="linear",
@@ -61,7 +63,7 @@ class ProphetParameters(BaseModel):
         default=None,
         description="Growth floor for logistic growth"
     )
-    
+
     # Changepoint Parameters
     n_changepoints: int = Field(
         default=25,
@@ -74,6 +76,7 @@ class ProphetParameters(BaseModel):
         le=1,
         description="Proportion of history where changepoints are considered"
     )
+
 
 class ForecastRequest(BaseModel):
     data: TimeSeriesData
@@ -91,6 +94,7 @@ class ForecastRequest(BaseModel):
         description="Whether to return trend and seasonal components"
     )
 
+
 class ForecastResponse(BaseModel):
     forecast_dates: List[str]
     forecast_values: List[float]
@@ -98,12 +102,14 @@ class ForecastResponse(BaseModel):
     forecast_upper_bound: List[float]
     components: Optional[Dict[str, List[float]]] = None
 
+
 def prepare_data(data: TimeSeriesData) -> pd.DataFrame:
     """Convert input data to Prophet's required format."""
     return pd.DataFrame({
         'ds': pd.to_datetime(data.dates),
         'y': data.values
     })
+
 
 def configure_prophet_model(params: ProphetParameters) -> Prophet:
     """Configure Prophet model with custom parameters."""
@@ -119,7 +125,7 @@ def configure_prophet_model(params: ProphetParameters) -> Prophet:
         'n_changepoints': params.n_changepoints,
         'changepoint_range': params.changepoint_range
     }
-    
+
     # Add capacity parameters for logistic growth
     if params.growth == 'logistic':
         if params.cap is None or params.floor is None:
@@ -127,31 +133,32 @@ def configure_prophet_model(params: ProphetParameters) -> Prophet:
         model_args['growth'] = 'logistic'
         model_args['cap'] = params.cap
         model_args['floor'] = params.floor
-    
+
     return Prophet(**model_args)
+
 
 @app.post("/forecast/", response_model=ForecastResponse)
 async def create_forecast(request: ForecastRequest):
     try:
         # Prepare the input data
         df = prepare_data(request.data)
-        
+
         # Configure and train the model
         model_params = request.model_parameters or ProphetParameters()
         model = configure_prophet_model(model_params)
         model.fit(df)
-        
+
         # Create future dates for forecasting
         future = model.make_future_dataframe(periods=request.periods)
-        
+
         # If using logistic growth, set cap and floor for future dates
         if model_params.growth == 'logistic':
             future['cap'] = model_params.cap
             future['floor'] = model_params.floor
-        
+
         # Make predictions
         forecast = model.predict(future)
-        
+
         # Prepare the response
         response_data = {
             'forecast_dates': forecast.ds[-request.periods:].dt.strftime('%Y-%m-%d').tolist(),
@@ -159,7 +166,7 @@ async def create_forecast(request: ForecastRequest):
             'forecast_lower_bound': forecast.yhat_lower[-request.periods:].tolist(),
             'forecast_upper_bound': forecast.yhat_upper[-request.periods:].tolist()
         }
-        
+
         # Add components if requested
         if request.return_components:
             components = {
@@ -169,18 +176,20 @@ async def create_forecast(request: ForecastRequest):
                 'daily': forecast.daily[-request.periods:].tolist() if 'daily' in forecast else None
             }
             response_data['components'] = {k: v for k, v in components.items() if v is not None}
-        
+
         return ForecastResponse(**response_data)
-        
+
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
 
 @app.get("/parameters/default")
 async def get_default_parameters():
     """Return the default model parameters and their descriptions."""
     return ProphetParameters.model_json_schema()
 
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
 
+    uvicorn.run(app, host="0.0.0.0", port=8000)
