@@ -4,7 +4,7 @@ from prophet import Prophet
 import pandas as pd
 from typing import List, Dict, Optional
 
-app = FastAPI(title="Onboarders Example Time Series Prediction Service")
+app = FastAPI(title="Time Series Prediction Service")
 
 
 class TimeSeriesData(BaseModel):

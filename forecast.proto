@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package forecast;
+
+// The forecasting service definition.
+service ForecastService {
+
+// Generates a forecast.
+rpc CreateForecast(ForecastRequest) returns (ForecastResponse);
+
+// Returns the default model parameters as a JSON string.
+rpc GetDefaultParameters(Empty) returns (DefaultParametersResponse);
+}
+
+// An empty message for endpoints that require no input.
+message Empty {}
+
+// Time series input data.
+message TimeSeriesData {
+repeated string dates = 1;
+repeated float values = 2;
+}
+
+// Model parameters.
+message ProphetParameters {
+float changepoint_prior_scale = 1;
+float seasonality_prior_scale = 2;
+float holidays_prior_scale = 3;
+string seasonality_mode = 4; // "additive" or "multiplicative"
+bool yearly_seasonality = 5;
+bool weekly_seasonality = 6;
+bool daily_seasonality = 7;
+string growth = 8; // "linear", "logistic", or "flat"
+float cap = 9; // for logistic growth; 0 if unused
+float floor = 10; // for logistic growth; 0 if unused
+int32 n_changepoints = 11;
+float changepoint_range = 12;
+}
+
+// Forecast request message.
+message ForecastRequest {
+TimeSeriesData data = 1;
+int32 periods = 2;
+ProphetParameters model_parameters = 3;
+bool return_components = 4;
+}
+
+// Helper type for returning lists of floats.
+message FloatList {
+repeated float values = 1;
+}
+
+// Forecast response message.
+message ForecastResponse {
+repeated string forecast_dates = 1;
+repeated float forecast_values = 2;
+repeated float forecast_lower_bound = 3;
+repeated float forecast_upper_bound = 4;
+
+map<string, FloatList> components = 5;
+}
+
+// Default parameters response (returns JSON as a string).
+message DefaultParametersResponse {
+string json = 1;
+}

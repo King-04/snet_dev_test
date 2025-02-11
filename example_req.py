@@ -28,7 +28,7 @@ def load_and_prepare_data(csv_path: str):
             "dates": df[date_col].dt.strftime('%Y-%m-%d').tolist(),
             "values": df[value_col].tolist()
         },
-        "periods": 50,  # Forecast 30 periods ahead
+        "periods": 30,  # Forecast 30 periods ahead
         "model_parameters": {
             "changepoint_prior_scale": 0.08,
             "seasonality_prior_scale": 12.0,

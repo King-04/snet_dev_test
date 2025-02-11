@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-import forecast_server_pb2 as forecast__server__pb2
+import forecast_pb2 as forecast__pb2
 
 GRPC_GENERATED_VERSION = '1.70.0'
 GRPC_VERSION = grpc.__version__
@@ -18,7 +18,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + f' but the generated code in forecast_server_pb2_grpc.py depends on'
+        + f' but the generated code in forecast_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -26,7 +26,7 @@ if _version_not_supported:
 
 
 class ForecastServiceStub(object):
-    """Service definition
+    """The forecasting service definition.
     """
 
     def __init__(self, channel):
@@ -37,29 +37,29 @@ class ForecastServiceStub(object):
         """
         self.CreateForecast = channel.unary_unary(
                 '/forecast.ForecastService/CreateForecast',
-                request_serializer=forecast__server__pb2.ForecastRequest.SerializeToString,
-                response_deserializer=forecast__server__pb2.ForecastResponse.FromString,
+                request_serializer=forecast__pb2.ForecastRequest.SerializeToString,
+                response_deserializer=forecast__pb2.ForecastResponse.FromString,
                 _registered_method=True)
         self.GetDefaultParameters = channel.unary_unary(
                 '/forecast.ForecastService/GetDefaultParameters',
-                request_serializer=forecast__server__pb2.Empty.SerializeToString,
-                response_deserializer=forecast__server__pb2.ProphetParameters.FromString,
+                request_serializer=forecast__pb2.Empty.SerializeToString,
+                response_deserializer=forecast__pb2.DefaultParametersResponse.FromString,
                 _registered_method=True)
 
 
 class ForecastServiceServicer(object):
-    """Service definition
+    """The forecasting service definition.
     """
 
     def CreateForecast(self, request, context):
-        """Maps to POST /forecast/
+        """Generates a forecast.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def GetDefaultParameters(self, request, context):
-        """Maps to GET /parameters/default
+        """Returns the default model parameters as a JSON string.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -70,13 +70,13 @@ def add_ForecastServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'CreateForecast': grpc.unary_unary_rpc_method_handler(
                     servicer.CreateForecast,
-                    request_deserializer=forecast__server__pb2.ForecastRequest.FromString,
-                    response_serializer=forecast__server__pb2.ForecastResponse.SerializeToString,
+                    request_deserializer=forecast__pb2.ForecastRequest.FromString,
+                    response_serializer=forecast__pb2.ForecastResponse.SerializeToString,
             ),
             'GetDefaultParameters': grpc.unary_unary_rpc_method_handler(
                     servicer.GetDefaultParameters,
-                    request_deserializer=forecast__server__pb2.Empty.FromString,
-                    response_serializer=forecast__server__pb2.ProphetParameters.SerializeToString,
+                    request_deserializer=forecast__pb2.Empty.FromString,
+                    response_serializer=forecast__pb2.DefaultParametersResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -87,7 +87,7 @@ def add_ForecastServiceServicer_to_server(servicer, server):
 
  # This class is part of an EXPERIMENTAL API.
 class ForecastService(object):
-    """Service definition
+    """The forecasting service definition.
     """
 
     @staticmethod
@@ -105,8 +105,8 @@ class ForecastService(object):
             request,
             target,
             '/forecast.ForecastService/CreateForecast',
-            forecast__server__pb2.ForecastRequest.SerializeToString,
-            forecast__server__pb2.ForecastResponse.FromString,
+            forecast__pb2.ForecastRequest.SerializeToString,
+            forecast__pb2.ForecastResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -132,8 +132,8 @@ class ForecastService(object):
             request,
             target,
             '/forecast.ForecastService/GetDefaultParameters',
-            forecast__server__pb2.Empty.SerializeToString,
-            forecast__server__pb2.ProphetParameters.FromString,
+            forecast__pb2.Empty.SerializeToString,
+            forecast__pb2.DefaultParametersResponse.FromString,
             options,
             channel_credentials,
             insecure,
