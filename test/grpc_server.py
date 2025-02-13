@@ -8,18 +8,12 @@ import pandas as pd
 class TimeSeriesService(timeseries_pb2_grpc.TimeSeriesServiceServicer):
     def Forecast(self, request, context):
         try:
-            # Debug incoming data
-            print("Received dates:", request.data.dates)
-            print("Type of dates:", type(request.data.dates))
-            print("First date:", request.data.dates[0] if request.data.dates else "Empty")
-
-            # Convert gRPC RepeatedScalarContainer to Python list
             dates_list = list(request.data.dates)
             values_list = list(request.data.values)
 
             # Prepare the input data
             df = pd.DataFrame({
-                'ds': pd.to_datetime(dates_list),  # Use the converted list
+                'ds': pd.to_datetime(dates_list),
                 'y': values_list
             })
 
@@ -28,7 +22,6 @@ class TimeSeriesService(timeseries_pb2_grpc.TimeSeriesServiceServicer):
             model = self.configure_prophet_model(model_params)
             model.fit(df)
 
-            # Create future dates for forecasting
             future = model.make_future_dataframe(periods=request.periods)
 
             # If using logistic growth, set cap and floor for future dates
@@ -36,33 +29,15 @@ class TimeSeriesService(timeseries_pb2_grpc.TimeSeriesServiceServicer):
                 future['cap'] = model_params.cap
                 future['floor'] = model_params.floor
 
-            # Make predictions
             forecast = model.predict(future)
 
-            # Prepare the response
+            # response
             response = timeseries_pb2.ForecastResponse(
                 forecast_dates=forecast.ds[-request.periods:].dt.strftime('%Y-%m-%d').tolist(),
                 forecast_values=forecast.yhat[-request.periods:].tolist(),
                 forecast_lower_bound=forecast.yhat_lower[-request.periods:].tolist(),
                 forecast_upper_bound=forecast.yhat_upper[-request.periods:].tolist()
             )
-
-            # Add components if requested
-            if request.return_components:
-                components = {}
-                if 'trend' in forecast:
-                    components['trend'] = timeseries_pb2.Components(values=forecast.trend[-request.periods:].tolist())
-                if 'yearly' in forecast:
-                    components['yearly'] = timeseries_pb2.Components(values=forecast.yearly[-request.periods:].tolist())
-                if 'weekly' in forecast:
-                    components['weekly'] = timeseries_pb2.Components(values=forecast.weekly[-request.periods:].tolist())
-                if 'daily' in forecast:
-                    components['daily'] = timeseries_pb2.Components(values=forecast.daily[-request.periods:].tolist())
-
-                # Assign components to the response
-                response.components.update(components)
-
-            return response
 
         except Exception as e:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
@@ -86,7 +61,6 @@ class TimeSeriesService(timeseries_pb2_grpc.TimeSeriesServiceServicer):
         return default_params
 
     def configure_prophet_model(self, params):
-        # Configure the Prophet model with the provided parameters
         model_args = {
             'changepoint_prior_scale': params.changepoint_prior_scale,
             'seasonality_prior_scale': params.seasonality_prior_scale,
@@ -111,7 +85,6 @@ class TimeSeriesService(timeseries_pb2_grpc.TimeSeriesServiceServicer):
         return Prophet(**model_args)
 
 def serve():
-    # Start the gRPC server
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     timeseries_pb2_grpc.add_TimeSeriesServiceServicer_to_server(TimeSeriesService(), server)
     server.add_insecure_port('[::]:50051')

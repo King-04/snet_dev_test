@@ -39,11 +39,11 @@ message ForecastResponse {
     repeated float forecast_values = 2;
     repeated float forecast_lower_bound = 3;
     repeated float forecast_upper_bound = 4;
-    map<string, Components> components = 5;  // Fixed map syntax
+    map<string, Components> components = 5;
 }
 
 message Components {
-    repeated float values = 1;  // Define a message for the map value
+    repeated float values = 1;
 }
 
 message Empty {}

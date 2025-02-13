@@ -5,37 +5,17 @@ import timeseries_pb2_grpc
 
 
 def load_and_prepare_data(csv_path: str):
-    """
-    Load time series data from CSV file.
-    Expects CSV to have at least two columns:
-    - date column (can be named 'date', 'timestamp', etc.)
-    - value column (can be named 'value', 'sales', etc.)
-    """
-    # Read the CSV file
     df = pd.read_csv(csv_path)
 
-    # Identify date column (assumes first column is date)
     date_col = df.columns[0]
     value_col = df.columns[1]
 
-    # Debug: Print the first few rows of the date column
-    print("Original dates column:")
-    print(df[date_col].head())
-
-    # Convert dates to datetime with explicit format
+    # dates to datetime
     df[date_col] = pd.to_datetime(df[date_col], format='%m/%d/%Y', errors='coerce')
 
     # Drop rows with invalid dates
     df = df.dropna(subset=[date_col])
 
-    # Debug: Print the first few rows after conversion
-    print("Dates column after conversion:")
-    print(df[date_col].head())
-
-    # Sort by date
-    df = df.sort_values(by=date_col)
-
-    # Prepare data in the format expected by the gRPC service
     data = timeseries_pb2.TimeSeriesData(
         dates=df[date_col].dt.strftime('%Y-%m-%d').tolist(),
         values=df[value_col].tolist()
