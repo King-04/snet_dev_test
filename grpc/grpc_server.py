@@ -11,24 +11,31 @@ import logging
 class ProphetServicer(prophet_pb2_grpc.ProphetForecastServicer):
     def Forecast(self, request, context):
         try:
-            # Validate periods
             if request.periods < 1:
                 raise ValueError("Periods must be ≥ 1")
 
-            # Read CSV
             df = pd.read_csv(
                 StringIO(request.csv_data.decode('utf-8')),
                 usecols=['ds', 'y']
             )
 
-            # Validate columns
             if not {'ds', 'y'}.issubset(df.columns):
                 raise ValueError("CSV requires 'ds' and 'y' columns")
 
-            # Generate forecast
+            # NEW: Date handling and frequency detection
+            df['ds'] = pd.to_datetime(df['ds'])
+            df = df.sort_values('ds').reset_index(drop=True)
+            freq = pd.infer_freq(df['ds']) or 'D'
+
             model = Prophet()
             model.fit(df)
-            future = model.make_future_dataframe(periods=request.periods)
+
+            future = model.make_future_dataframe(
+                periods=request.periods,
+                include_history=False,
+                freq=freq
+            )
+
             forecast = model.predict(future)
 
             return prophet_pb2.ForecastResponse(

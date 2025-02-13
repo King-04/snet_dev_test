@@ -28,14 +28,15 @@ def run_client(csv_path, periods, server_address='localhost:50051'):
             output_path = csv_path.replace('.csv', f'_grpc_forecast_{periods}.csv')
             pd.read_csv(StringIO(response.forecast_csv.decode('utf-8'))) \
                 .to_csv(output_path, index=False)
-            print(f"✅ Forecast saved to {output_path}")
+            print(f"Forecast saved to {output_path}")
+            print("Columns included: ds (date), yhat (prediction), yhat_lower/yhat_upper (confidence bounds)")
             return True
         else:
-            print(f"❌ Error: {response.error}")
+            print(f"Error: {response.error}")
             return False
 
     except Exception as e:
-        print(f"⚠️ Client error: {str(e)}")
+        print(f"Client error: {str(e)}")
         return False
 
 

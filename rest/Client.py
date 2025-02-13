@@ -4,16 +4,16 @@ from io import StringIO
 
 
 def main():
-    print("🕒 Starting Prophet Forecasting Client\n")
+    print("Starting...\n")
 
-    # Get user inputs
+    # Get inputs
     server_url = input("Enter server URL (e.g., http://localhost:8000): ").strip()
-    csv_path = input("Path to your CSV file: ").strip()
+    csv_path = input("Path to CSV file: ").strip()
     periods = input("Number of periods to forecast [default 20]: ").strip()
     periods = int(periods) if periods.isdigit() else 20
 
     try:
-        print(f"\n📤 Sending {csv_path} to {server_url}...")
+        print(f"\nSending {csv_path} to {server_url}...")
 
         with open(csv_path, 'rb') as f:
             response = requests.post(
@@ -30,7 +30,7 @@ def main():
 
                 pd.read_csv(StringIO(result['csv'])).to_csv(output_path, index=False)
 
-                print(f"\n✅ Forecast saved to: {output_path}")
+                print(f"\nForecast saved to: {output_path}")
                 print("Columns included: ds (date), yhat (prediction), yhat_lower/yhat_upper (confidence bounds)")
                 return
 

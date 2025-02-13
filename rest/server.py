@@ -4,7 +4,7 @@ import pandas as pd
 import io
 import logging
 
-app = FastAPI(title="Prophet Forecasting Service")
+app = FastAPI(title="Prophet Revenue Forecasting Service")
 
 
 @app.post("/forecast")
@@ -12,33 +12,32 @@ async def create_forecast(
         periods: int = 20,
         csv_file: UploadFile = File(...)
 ):
-    """Accepts CSV with 'ds' and 'y' columns, returns forecast"""
-
-    # Validate input
+    """Accepts CSV with 'ds' and 'y' columns"""
     if periods < 1:
         return {"error": "Periods must be ≥ 1"}
 
     try:
-        # Read CSV
         contents = await csv_file.read()
         df = pd.read_csv(io.StringIO(contents.decode('utf-8')))
 
-        # Validate columns
         if not {'ds', 'y'}.issubset(df.columns):
             return {"error": "CSV requires 'ds' (date) and 'y' (value) columns"}
 
-        # Train model
+        df['ds'] = pd.to_datetime(df['ds'])
+
         model = Prophet()
         model.fit(df)
 
-        # Generate future dates
-        future = model.make_future_dataframe(periods=periods)
+        # Generate future dates without history
+        future = model.make_future_dataframe(
+            periods=periods,
+            include_history=False,
+            freq='W'  # Weekly frequency based on sample data
+        )
 
-        # Make predictions
         forecast = model.predict(future)
-
-        # Return forecast subset
         result = forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']]
+
         return {
             "csv": result.to_csv(index=False),
             "message": f"Success: {periods} period forecast"
